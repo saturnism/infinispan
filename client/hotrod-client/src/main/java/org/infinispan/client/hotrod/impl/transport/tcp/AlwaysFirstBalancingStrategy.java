@@ -38,6 +38,11 @@ import org.infinispan.client.hotrod.logging.LogFactory;
  * This is useful, for example, when there is a need to setup an active-passive cluster, where
  * all requests must be directed to active node.  If the active node failed, that node will be
  * removed from HotRod client's server list, and the passive node (next in line) will be returned.
+ * 
+ * Note, the order of the servers specified in the server list is not guaranteed.  I.e., if you
+ * specify the server list to be <i>"primary-server;secondary-server"</i>, the first server is not
+ * guaranteed to be <i>primary-server</i>.  This is because, ultimately, the server list is stored
+ * in a <code>HashSet</code>.
  *
  * @author <a href="mailto:rtsang@redhat.com">Ray Tsang</a>
  * @since 5.2
