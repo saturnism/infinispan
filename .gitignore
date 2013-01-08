@@ -39,3 +39,4 @@ rhq-plugin.xml
 IspnQLLexer.java
 IspnQLParser.java
 IspnQL.tokens
+.DS_Store
