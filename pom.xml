@@ -79,6 +79,7 @@
       <module>cdi/extension</module>
       <module>cdi/tck-runner</module>
       <module>integrationtests/luceneintegration</module>
+      <module>groovy</module>
    </modules>
 
    <profiles>
