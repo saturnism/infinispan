@@ -120,4 +120,7 @@ public interface Ids {
 
    int DEFAULT_CONSISTENT_HASH_FACTORY = 91;
    int REPLICATED_CONSISTENT_HASH_FACTORY = 92;
+   
+   int SCRIPT_MAPPER = 101;
+   int SCRIPT_REDUCER = 102;
 }
