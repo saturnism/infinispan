@@ -123,4 +123,5 @@ public interface Ids {
    
    int SCRIPT_MAPPER = 101;
    int SCRIPT_REDUCER = 102;
+   int SCRIPT_COLLATOR = 103;
 }

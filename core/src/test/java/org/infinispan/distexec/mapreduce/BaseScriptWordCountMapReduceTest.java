@@ -18,11 +18,6 @@
  */
 package org.infinispan.distexec.mapreduce;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.testng.annotations.Test;
 
@@ -34,33 +29,10 @@ public abstract class BaseScriptWordCountMapReduceTest extends BaseWordCountMapR
       createClusteredCaches(2, cacheName(), builder);
    }
    
-   protected abstract String getEngineName();
-   protected abstract String getWordCountMapperScriptName();
-   protected abstract String getWordCountReducerScriptName();
-
    @Override
    public MapReduceTask<String, String, String, Integer> invokeMapReduce(String keys[], boolean useCombiner)
          throws Exception {
       return invokeMapReduce(keys, createWordCountMapper(), createWordCountReducer(), useCombiner);
-   }
-
-   protected String loadScript(String resource) {
-      try {
-         InputStream is = getClass().getClassLoader().getResourceAsStream(resource);
-         BufferedReader br = new BufferedReader(new InputStreamReader(is));
-
-         StringBuilder sb = new StringBuilder();
-
-         String line;
-         while ((line = br.readLine()) != null) {
-            sb.append(line);
-            sb.append("\n"); // newline, apparently, is important
-         }
-         br.close();
-         return sb.toString();
-      } catch (IOException e) {
-         throw new RuntimeException(e);
-      }
    }
    
    @Override
@@ -68,17 +40,14 @@ public abstract class BaseScriptWordCountMapReduceTest extends BaseWordCountMapR
       // this test doesn't really execute in the super class...
    }
    
-   protected Mapper<String, String, String, Integer> createWordCountMapper() {
-      return new ScriptMapper<String, String, String, Integer>(
-            getEngineName(),
-            getWordCountMapperScriptName(),
-            loadScript(getWordCountMapperScriptName()));
+   public void testScriptCollator() throws Exception {
+      MapReduceTask<String,String,String,Integer> task = invokeMapReduce(null);
+      Collator<String, Integer, Integer> collator = createCollator();
+      Integer totalWords = task.execute(collator);
+      assertWordCount(totalWords, 56);  
    }
-
-   protected Reducer<String, Integer> createWordCountReducer() {
-      return new ScriptReducer<String, Integer>(
-            getEngineName(),
-            getWordCountReducerScriptName(),
-            loadScript(getWordCountReducerScriptName()));
-   }
+   
+   abstract protected Mapper<String, String, String, Integer> createWordCountMapper() throws Exception;
+   abstract protected Reducer<String, Integer> createWordCountReducer() throws Exception;
+   abstract protected Collator<String, Integer, Integer> createCollator()  throws Exception;
 }

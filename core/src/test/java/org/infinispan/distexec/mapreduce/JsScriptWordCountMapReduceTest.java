@@ -22,19 +22,18 @@ import org.testng.annotations.Test;
 
 @Test(groups = "functional", testName = "distexec.JsScriptWordCountMapReduceTest")
 public class JsScriptWordCountMapReduceTest extends BaseScriptWordCountMapReduceTest {
-
    @Override
-   protected String getEngineName() {
-      return "javascript";
+   protected Mapper<String, String, String, Integer> createWordCountMapper() throws Exception {
+      return new ScriptMapReduceBuilder().loadFromResource("mapreduce/javascript/WordCountMapper.js").buildMapper();
    }
 
    @Override
-   protected String getWordCountMapperScriptName() {
-      return "mapreduce/javascript/WordCountMapper.js";
+   protected Reducer<String, Integer> createWordCountReducer() throws Exception {
+      return new ScriptMapReduceBuilder().loadFromResource("mapreduce/javascript/WordCountReducer.js").buildReducer();
    }
 
    @Override
-   protected String getWordCountReducerScriptName() {
-      return "mapreduce/javascript/WordCountReducer.js";
+   protected Collator<String, Integer, Integer> createCollator() throws Exception {
+      return new ScriptMapReduceBuilder().loadFromResource("mapreduce/javascript/WordCountCollator.js").buildCollator();
    }
 }

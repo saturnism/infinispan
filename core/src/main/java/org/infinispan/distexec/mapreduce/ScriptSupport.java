@@ -29,44 +29,34 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import org.infinispan.CacheException;
 import org.infinispan.marshall.AdvancedExternalizer;
 
-public class ScriptSupport {
+public abstract class ScriptSupport {
    final String engineName;
    final String fileName;
    final String script;
+   final String functionName;
+   
    final Map<String, Object> variables;
    protected final transient Invocable invocable;
-      
-   public ScriptSupport(String engineName, String script) {
-      this(engineName, null, script);
-   }
    
-   public ScriptSupport(String engineName, String fileName, String script) {
-      this(engineName, fileName, script, null);
+   public ScriptSupport(String engineName, String fileName, String script, Map<String, Object> variables, String functionName) {
+      this(new ScriptEngineManager().getEngineByName(engineName), fileName, script, variables, functionName);
    }
-   
-   public ScriptSupport(String engineName, String script, Map<String, Object> variables) {
-      this(engineName, null, script, variables);
-   }
-   
-   public ScriptSupport(String engineName, String fileName, String script, Map<String, Object> variables) {
-      if (engineName == null)
-         throw new NullPointerException("engineName cannot be null");
+   public ScriptSupport(ScriptEngine engine, String fileName, String script, Map<String, Object> variables, String functionName) {
+      if (engine == null)
+         throw new NullPointerException("engine cannot be null");
       if (script == null)
          throw new NullPointerException("script cannot be null");
       
-      ScriptEngineManager manager = new ScriptEngineManager();
-      this.engineName = engineName;
+      this.engineName = engine.getFactory().getLanguageName();
       this.script = script;
       this.variables = variables;
       this.fileName = fileName;
-
-      ScriptEngine engine = manager.getEngineByName(engineName);
-
-      if (engine == null)
-         throw new IllegalArgumentException("engine name '" + engineName + " is not found");
+      this.functionName = (functionName == null ? getDefaultFunctionName() : functionName);
       
+      // This is useful for stack trace
       if (fileName != null)
          engine.put(ScriptEngine.FILENAME, fileName);
 
@@ -86,7 +76,18 @@ public class ScriptSupport {
       } catch (ScriptException e) {
          throw new IllegalArgumentException("script couldn't be evaluated", e);
       }
-
+   }
+   
+   abstract protected String getDefaultFunctionName();
+   
+   protected Object invoke(String function, Object ... args) {
+      try {
+         return invocable.invokeFunction(function, args);
+      } catch (ScriptException e) {
+         throw new CacheException("script exception", e);
+      } catch (NoSuchMethodException e) {
+         throw new CacheException("no such method", e);
+      }
    }
    
    public abstract static class ExternalizerSupport<T extends ScriptSupport> implements AdvancedExternalizer<T> {
@@ -96,8 +97,9 @@ public class ScriptSupport {
       @Override
       public void writeObject(ObjectOutput output, T object) throws IOException {
          output.writeUTF(object.engineName);
-         output.writeUTF(object.fileName);
+         output.writeObject(object.fileName);
          output.writeUTF(object.script);
+         output.writeUTF(object.functionName);
          output.writeObject(object.variables);
       }
       
@@ -105,12 +107,13 @@ public class ScriptSupport {
       @Override
       public T readObject(ObjectInput input) throws IOException, ClassNotFoundException {
          String engineName = input.readUTF();
-         String fileName = input.readUTF();
+         String fileName = (String) input.readObject();
          String script = input.readUTF();
+         String functionName = input.readUTF();
          Map<String, Object> variables = (Map<String, Object>) input.readObject();
-         return createObject(engineName, fileName, script, variables);
+         return createObject(engineName, fileName, script, variables, functionName);
       }
       
-      protected abstract T createObject(String engineName, String fileName, String script, Map<String, Object> variables);
+      protected abstract T createObject(String engineName, String fileName, String script, Map<String, Object> variables, String functionName);
    }
 }

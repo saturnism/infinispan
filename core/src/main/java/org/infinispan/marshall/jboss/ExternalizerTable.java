@@ -52,6 +52,7 @@ import org.infinispan.container.entries.versioned.VersionedTransientCacheValue;
 import org.infinispan.container.entries.versioned.VersionedTransientMortalCacheEntry;
 import org.infinispan.container.entries.versioned.VersionedTransientMortalCacheValue;
 import org.infinispan.context.Flag;
+import org.infinispan.distexec.mapreduce.ScriptCollator;
 import org.infinispan.distexec.mapreduce.ScriptMapper;
 import org.infinispan.distexec.mapreduce.ScriptReducer;
 import org.infinispan.distribution.ch.DefaultConsistentHash;
@@ -307,6 +308,7 @@ public class ExternalizerTable implements ObjectTable {
       
       addInternalExternalizer(new ScriptMapper.Externalizer());
       addInternalExternalizer(new ScriptReducer.Externalizer());
+      addInternalExternalizer(new ScriptCollator.Externalizer());
    }
 
    void addInternalExternalizer(AdvancedExternalizer<?> ext) {

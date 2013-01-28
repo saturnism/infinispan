@@ -18,7 +18,6 @@
  */
 package org.infinispan.distexec.mapreduce;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -27,54 +26,51 @@ import javax.script.ScriptEngine;
 import org.infinispan.marshall.Ids;
 import org.infinispan.util.Util;
 
-public class ScriptReducer<KOut, VOut> extends ScriptSupport implements Reducer<KOut, VOut> {
-   /** The serialVersionUID */
-   private static final long serialVersionUID = 6374161026723840881L;
+public class ScriptCollator<KOut, VOut, R> extends ScriptSupport implements Collator<KOut, VOut, R> {   
+   public static final String COLLATE_FUNCTION_NAME = "collate";
    
-   public static final String REDUCE_FUNCTION_NAME = "reduce";
-   
-
-   public ScriptReducer(ScriptEngine engine, String fileName, String script, Map<String, Object> variables,
-         String functionName) {
-      super(engine, fileName, script, variables, functionName);
-   }
-
-   public ScriptReducer(String engineName, String fileName, String script, Map<String, Object> variables,
+   public ScriptCollator(String engineName, String fileName, String script, Map<String, Object> variables,
          String functionName) {
       super(engineName, fileName, script, variables, functionName);
+   }
+
+   public ScriptCollator(ScriptEngine engine, String fileName, String script, Map<String, Object> variables,
+         String functionName) {
+      super(engine, fileName, script, variables, functionName);
    }
    
    @Override
    protected String getDefaultFunctionName() {
-      return REDUCE_FUNCTION_NAME;
+      return COLLATE_FUNCTION_NAME;
    }
 
    @SuppressWarnings("unchecked")
    @Override
-   public VOut reduce(KOut reducedKey, Iterator<VOut> iter) {
-      return (VOut) invoke(REDUCE_FUNCTION_NAME, reducedKey, iter);
+   public R collate(Map<KOut, VOut> reducedResults) {
+      return (R) invoke(COLLATE_FUNCTION_NAME, reducedResults);
    }
    
    @SuppressWarnings("rawtypes")
-   public static class Externalizer extends ExternalizerSupport<ScriptReducer> {
+   public static class Externalizer extends ExternalizerSupport<ScriptCollator> {
       /** The serialVersionUID */
       private static final long serialVersionUID = -6228476644468794619L;
 
       @SuppressWarnings("unchecked")
       @Override
-      public Set<Class<? extends ScriptReducer>> getTypeClasses() {
-         return Util.<Class<? extends ScriptReducer>>asSet(ScriptReducer.class);
+      public Set<Class<? extends ScriptCollator>> getTypeClasses() {
+         return Util.<Class<? extends ScriptCollator>>asSet(ScriptCollator.class);
       }
 
       @Override
       public Integer getId() {
-         return Ids.SCRIPT_REDUCER;
+         return Ids.SCRIPT_COLLATOR;
       }
-
+      
       @SuppressWarnings("unchecked")
       @Override
-      protected ScriptReducer createObject(String engineName, String fileName, String script,
+      protected ScriptCollator createObject(String engineName, String fileName, String script,
             Map<String, Object> variables, String functionName) {
-         return new ScriptReducer(engineName, fileName, script, variables, functionName);
-      }}
+         return new ScriptCollator(engineName, fileName, script, variables, functionName);
+      }
+   }
 }

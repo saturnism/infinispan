@@ -21,41 +21,36 @@ package org.infinispan.distexec.mapreduce;
 import java.util.Map;
 import java.util.Set;
 
-import javax.script.ScriptException;
+import javax.script.ScriptEngine;
 
-import org.infinispan.CacheException;
 import org.infinispan.marshall.Ids;
 import org.infinispan.util.Util;
 
 public class ScriptMapper<KIn, VIn, KOut, VOut> extends ScriptSupport implements Mapper<KIn, VIn, KOut, VOut> {
    /** The serialVersionUID */
    private static final long serialVersionUID = 7986004473924703191L;
+   
+   public static final String MAP_FUNCTION_NAME = "map";
 
-   public ScriptMapper(String engineName, String script, Map<String, Object> variables) {
-      super(engineName, script, variables);
+   
+   public ScriptMapper(ScriptEngine engine, String fileName, String script, Map<String, Object> variables,
+         String functionName) {
+      super(engine, fileName, script, variables, functionName);
    }
 
-   public ScriptMapper(String engineName, String fileName, String script, Map<String, Object> variables) {
-      super(engineName, fileName, script, variables);
+   public ScriptMapper(String engineName, String fileName, String script, Map<String, Object> variables,
+         String functionName) {
+      super(engineName, fileName, script, variables, functionName);
    }
-
-   public ScriptMapper(String engineName, String fileName, String script) {
-      super(engineName, fileName, script);
-   }
-
-   public ScriptMapper(String engineName, String script) {
-      super(engineName, script);
+   
+   @Override
+   protected String getDefaultFunctionName() {
+      return MAP_FUNCTION_NAME;
    }
 
    @Override
    public void map(KIn key, VIn value, Collector<KOut, VOut> collector) {
-      try {
-         invocable.invokeFunction("map", key, value, collector);
-      } catch (ScriptException e) {
-         throw new CacheException("script exception", e);
-      } catch (NoSuchMethodException e) {
-         throw new CacheException("no such method", e);
-      }
+      invoke(functionName, key, value, collector);
    }
    
    @SuppressWarnings("rawtypes")
@@ -76,8 +71,8 @@ public class ScriptMapper<KIn, VIn, KOut, VOut> extends ScriptSupport implements
 
       @SuppressWarnings("unchecked")
       @Override
-      protected ScriptMapper createObject(String engineName, String fileName, String script, Map<String, Object> variables) {
-         return new ScriptMapper(engineName, fileName, script, variables);
+      protected ScriptMapper createObject(String engineName, String fileName, String script, Map<String, Object> variables, String functionName) {
+         return new ScriptMapper(engineName, fileName, script, variables, functionName);
       }
    }
 

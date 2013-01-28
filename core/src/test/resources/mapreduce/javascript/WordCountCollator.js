@@ -1,4 +1,4 @@
-/* 
+/*
  * JBoss, Home of Professional Open Source
  * Copyright 2013 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @author tags. All rights reserved.
@@ -16,24 +16,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
  */
-package org.infinispan.distexec.mapreduce;
-
-import org.testng.annotations.Test;
-
-@Test(groups = "functional", testName = "distexec.GroovyScriptWordCountMapReduceTest")
-public class GroovyScriptWordCountMapReduceTest extends BaseScriptWordCountMapReduceTest {
-   @Override
-   protected Mapper<String, String, String, Integer> createWordCountMapper() throws Exception {
-      return new ScriptMapReduceBuilder().loadFromResource("mapreduce/groovy/WordCountMapper.groovy").buildMapper();
+function collate(reducedResults) {
+   var sum = 0;
+   var iterator = reducedResults.values().iterator();
+   while (iterator.hasNext())
+   {
+      sum += parseInt(iterator.next());
    }
-
-   @Override
-   protected Reducer<String, Integer> createWordCountReducer() throws Exception {
-      return new ScriptMapReduceBuilder().loadFromResource("mapreduce/groovy/WordCountReducer.groovy").buildReducer();
-   }
-
-   @Override
-   protected Collator<String, Integer, Integer> createCollator() throws Exception {
-      return new ScriptMapReduceBuilder().loadFromResource("mapreduce/groovy/WordCountCollator.groovy").buildCollator();
-   }
+   return new java.lang.Integer.valueOf(sum);
 }
