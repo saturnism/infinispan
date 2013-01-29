@@ -96,20 +96,20 @@ public abstract class ScriptSupport {
       
       @Override
       public void writeObject(ObjectOutput output, T object) throws IOException {
-         output.writeUTF(object.engineName);
+         output.writeObject(object.engineName);
          output.writeObject(object.fileName);
-         output.writeUTF(object.script);
-         output.writeUTF(object.functionName);
+         output.writeObject(object.script);
+         output.writeObject(object.functionName);
          output.writeObject(object.variables);
       }
       
       @SuppressWarnings("unchecked")
       @Override
       public T readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-         String engineName = input.readUTF();
+         String engineName = (String) input.readObject();
          String fileName = (String) input.readObject();
-         String script = input.readUTF();
-         String functionName = input.readUTF();
+         String script = (String) input.readObject();
+         String functionName =  (String) input.readObject();
          Map<String, Object> variables = (Map<String, Object>) input.readObject();
          return createObject(engineName, fileName, script, variables, functionName);
       }
