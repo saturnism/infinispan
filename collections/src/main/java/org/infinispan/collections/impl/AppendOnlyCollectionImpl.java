@@ -23,9 +23,13 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.infinispan.atomic.Delta;
 import org.infinispan.atomic.NullDelta;
@@ -37,18 +41,41 @@ import org.infinispan.util.Util;
 public class AppendOnlyCollectionImpl<E> implements AppendOnlyCollection<E> {
    protected Collection<E> delegate;
    private AppendOnlyCollectionDelta delta;
+   private Type type;
    
    volatile boolean copied = false;
    volatile boolean removed = false;
    
    public AppendOnlyCollectionImpl() {
-      this(new LinkedList<E>());
+      this(Type.LIST);
    }
    
-   public AppendOnlyCollectionImpl(Collection<E> collection) {
-      this.delegate = collection;
+   public AppendOnlyCollectionImpl(Type type) {
+      switch (type) {
+      case SET:
+         this.delegate = new HashSet<E>();
+         break;
+      case SORTED:
+         this.delegate = new ConcurrentSkipListSet<E>();
+         break;
+      case LIST:
+      default:
+         this.delegate = new LinkedList<E>();
+      }
    }
    
+   public AppendOnlyCollectionImpl(Collection<E> delegate) {
+      this.delegate = delegate;
+      if (delegate instanceof List) {
+         this.type = Type.LIST;
+      } else if (delegate instanceof SortedSet) {
+         this.type = Type.SORTED;
+      } else if (delegate instanceof Set) {
+         this.type = Type.SET;
+      }
+      
+   }
+
    @Override
    public boolean add(E e) {
       boolean changed = delegate.add(e);
@@ -68,7 +95,7 @@ public class AppendOnlyCollectionImpl<E> implements AppendOnlyCollection<E> {
    }
    
    AppendOnlyCollectionDelta getDelta() {
-      if (delta == null) delta = new AppendOnlyCollectionDelta();
+      if (delta == null) delta = new AppendOnlyCollectionDelta(type);
       return delta;
    }
 
@@ -169,5 +196,15 @@ public class AppendOnlyCollectionImpl<E> implements AppendOnlyCollection<E> {
       public Integer getId() {
          return ExternalizerIds.APPEND_ONLY_COLLECTION;
       }
+   }
+
+   @Override
+   public Collection<E> getDelegate() {
+      return delegate;
+   }
+   
+   @Override
+   public String toString() {
+      return delegate.toString();
    }
 }

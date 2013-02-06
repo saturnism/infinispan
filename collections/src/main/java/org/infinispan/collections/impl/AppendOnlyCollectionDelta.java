@@ -32,6 +32,7 @@ import java.util.Set;
 
 import org.infinispan.atomic.Delta;
 import org.infinispan.atomic.DeltaAware;
+import org.infinispan.collections.AppendOnlyCollection.Type;
 import org.infinispan.collections.ExternalizerIds;
 import org.infinispan.marshall.AdvancedExternalizer;
 import org.infinispan.util.Util;
@@ -53,6 +54,11 @@ public class AppendOnlyCollectionDelta implements Delta, Serializable {
 
    List<Operation<Object>> changeLog;
    private boolean hasClearOperation;
+   private Type type;
+   
+   public AppendOnlyCollectionDelta(Type type) {
+      this.type = type;
+   }
 
    @SuppressWarnings("unchecked")
    @Override
@@ -61,7 +67,7 @@ public class AppendOnlyCollectionDelta implements Delta, Serializable {
       if (d != null && (d instanceof AppendOnlyCollectionImpl))
          other = (AppendOnlyCollectionImpl<Object>) d;
       else
-         other = new AppendOnlyCollectionImpl<Object>();
+         other = new AppendOnlyCollectionImpl<Object>(type);
       if (changeLog != null) {
          for (Operation<Object> o : changeLog) o.replay(other.delegate);
       }      
@@ -96,6 +102,7 @@ public class AppendOnlyCollectionDelta implements Delta, Serializable {
       public void writeObject(ObjectOutput output, AppendOnlyCollectionDelta delta)
             throws IOException {
          if (trace) log.tracef("Serializing changeLog %s", delta.changeLog);
+         output.writeObject(delta.type.ordinal());
          output.writeObject(delta.changeLog);
       }
  
@@ -103,7 +110,9 @@ public class AppendOnlyCollectionDelta implements Delta, Serializable {
       @Override
       public AppendOnlyCollectionDelta readObject(ObjectInput input)
             throws IOException, ClassNotFoundException {
-         AppendOnlyCollectionDelta delta = new AppendOnlyCollectionDelta();
+         int typeOrdinal = input.readInt();
+         Type type = Type.values()[typeOrdinal];
+         AppendOnlyCollectionDelta delta = new AppendOnlyCollectionDelta(type);
          delta.changeLog = (List<Operation<Object>>) input.readObject();
          if (trace) log.tracef("Deserialized changeLog %s", delta.changeLog);
          return delta;

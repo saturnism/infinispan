@@ -30,7 +30,9 @@ import java.util.Set;
 
 import org.infinispan.atomic.Delta;
 import org.infinispan.atomic.DeltaAware;
+import org.infinispan.collections.AppendOnlyCollection;
 import org.infinispan.collections.ExternalizerIds;
+import org.infinispan.collections.AppendOnlyCollection.Type;
 import org.infinispan.marshall.AdvancedExternalizer;
 import org.infinispan.util.Util;
 
@@ -45,6 +47,7 @@ public class AppendDelta<E> implements Delta, Serializable {
    private static final long serialVersionUID = 3250977717093617051L;
 
    AddOperation<Object> addOperation;
+   Type type = Type.LIST;
    
    public AppendDelta() {
    }
@@ -52,17 +55,23 @@ public class AppendDelta<E> implements Delta, Serializable {
    public AppendDelta(E e) {
       this.addOperation = new AddOperation<Object>(e);
    }
+   
+   public AppendDelta(Type type, E e) {
+      this.type = type;
+      this.addOperation = new AddOperation<Object>(e);
+   }
 
    @SuppressWarnings("unchecked")
    @Override
    public DeltaAware merge(DeltaAware d) {
-      AppendOnlyCollectionImpl<Object> other;
-      if (d != null && (d instanceof AppendOnlyCollectionImpl))
-         other = (AppendOnlyCollectionImpl<Object>) d;
+      AppendOnlyCollection<Object> other;
+      if (d != null && (d instanceof AppendOnlyCollection))
+         other = (AppendOnlyCollection<Object>) d;
       else
-         other = new AppendOnlyCollectionImpl<Object>();
+         other = new AppendOnlyCollectionImpl<Object>(type);
+      
       if (addOperation != null) {
-         addOperation.replay(other.delegate);
+         addOperation.replay(other.getDelegate());
       }      
       return other;
    }
@@ -76,6 +85,7 @@ public class AppendDelta<E> implements Delta, Serializable {
       @Override
       public void writeObject(ObjectOutput output, AppendDelta delta)
             throws IOException {
+         output.writeInt(delta.type.ordinal());
          output.writeObject(delta.addOperation);
       }
  
@@ -84,6 +94,8 @@ public class AppendDelta<E> implements Delta, Serializable {
       public AppendDelta readObject(ObjectInput input)
             throws IOException, ClassNotFoundException {
          AppendDelta delta = new AppendDelta();
+         int typeOrdinal = input.readInt();
+         delta.type = Type.values()[typeOrdinal];
          delta.addOperation = (AddOperation<Object>) input.readObject();
          return delta;
       }

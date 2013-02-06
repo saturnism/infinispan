@@ -23,6 +23,12 @@ import java.util.Collection;
 import org.infinispan.atomic.DeltaAware;
 
 public interface AppendOnlyCollection<E> extends IspnCollection<E>, Iterable<E>, DeltaAware {
+   public static enum Type {
+      LIST,
+      SET,
+      SORTED
+   }
+   
    /**
     * @throws UnsupportedOperationException
     */
@@ -40,4 +46,6 @@ public interface AppendOnlyCollection<E> extends IspnCollection<E>, Iterable<E>,
     */
    @Override
    public boolean removeAll(Collection<?> c);
+   
+   public Collection<E> getDelegate();
 }
