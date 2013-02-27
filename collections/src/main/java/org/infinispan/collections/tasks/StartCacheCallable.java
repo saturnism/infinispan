@@ -31,7 +31,7 @@ import org.infinispan.distexec.DistributedCallable;
 public class StartCacheCallable<K, V> implements DistributedCallable<K, V, Void>, Serializable {
 	private static final long serialVersionUID = 8331682008912636780L;
 	private final String cacheName;
-	private Cache<K, V> cache;
+	private transient Cache<K, V> cache;
 	
 	public StartCacheCallable(String cacheName) {
 		this.cacheName = cacheName;

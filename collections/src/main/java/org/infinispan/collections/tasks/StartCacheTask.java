@@ -22,6 +22,10 @@
  */
 package org.infinispan.collections.tasks;
 
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
 import org.infinispan.Cache;
 import org.infinispan.distexec.DefaultExecutorService;
 import org.infinispan.distexec.DistributedExecutorService;
@@ -37,7 +41,14 @@ public class StartCacheTask<K, V> extends AbstractDistribtuedTask<K, V, Void> {
 	@Override
 	public Void executeSync() {
 		DistributedExecutorService des = new DefaultExecutorService(getCache());
-		des.submitEverywhere(new StartCacheCallable<K, V>(cacheName));
+		List<Future<Void>> list = des.submitEverywhere(new StartCacheCallable<K, V>(cacheName));
+		for (Future<Void> future : list) {
+		   try {
+            future.get();
+         } catch (InterruptedException e) {
+         } catch (ExecutionException e) {
+         }
+		}
 		return null;
 	}
 }
